@@ -1,0 +1,7 @@
+Are you sick of looking for a way to implement custom inputs that works cross-browser? 
+What about looking for one that offers you lots of layout flexibility?
+Want it to leverage jQuery?
+Looking for a syntax that fits into jQuery UI's Widgets?
+Sick of widgets binding to every element rather than using event delegation?
+
+Good news! You've come to the right place.
