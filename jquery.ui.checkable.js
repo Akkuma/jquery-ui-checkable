@@ -1,5 +1,5 @@
 /*
-* jQuery UI Checkable v1.0.0
+* jQuery UI Checkable v1.0.1
 * Copyright (c) 2011, Gregory Waxman. All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -19,14 +19,16 @@
         var element = $element[0];
 
         if ((useDefaultBehavior && !element.disabled) || !useDefaultBehavior) {
+            var classNames = options ? options.classNames : $.data(element, NAMESPACE).options.classNames;
+            var $parent = $element.parent();
+
             if (element.type === 'radio') {
-                $('input[name="' + element.name + '"]').removeAttr('checked');
+                $('input[name="' + element.name + '"]')
+                    .removeAttr('checked').parent().removeClass(classNames.checked);                
             }
 
             element.checked = 'checked';
-
-            var classNames = options ? options.classNames : $.data(element, NAMESPACE).options.classNames;
-            $element.parent().addClass(classNames.checked);
+            $parent.addClass(classNames.checked);
         }
     }
 
