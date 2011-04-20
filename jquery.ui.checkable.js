@@ -1,5 +1,5 @@
 /*
-* jQuery UI Checkable v1.0.1
+* jQuery UI Checkable v1.0.2
 * Copyright (c) 2011, Gregory Waxman. All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -113,6 +113,11 @@
                 }
 
                 $('label[for=' + element.id + ']').addClass([options.classNames.label, DELEGATE_CLASS, classNames.labelType, (isDisabled ? classNames.disabled : '')].join(' '));
+            }
+            else {
+                //jQuery UI's Widgets does not offer developers the flexibility to pass in an arbitrary set of elements.
+                //It does a bunch of internal setup for your widget in _createWidget
+                $.Widget.prototype.destroy.apply(this, arguments)
             }
         },
 
