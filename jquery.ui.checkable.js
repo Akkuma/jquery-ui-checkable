@@ -1,5 +1,5 @@
 /*
-* jQuery UI Checkable v1.0.2
+* jQuery UI Checkable v1.1.0
 * Copyright (c) 2011, Gregory Waxman. All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -23,11 +23,10 @@
             var $parent = $element.parent();
 
             if (element.type === 'radio') {
-                $('input[name="' + element.name + '"]')
-                    .removeAttr('checked').parent().removeClass(classNames.checked);                
+                $('input[name="' + element.name + '"]').parent().removeClass(classNames.checked);               
             }
 
-            element.checked = 'checked';
+            element.checked = true;
             $parent.addClass(classNames.checked);
         }
     }
@@ -36,7 +35,7 @@
         var element = $element[0];
 
         if ((useDefaultBehavior && !element.disabled) || !useDefaultBehavior) {
-            $element.removeAttr('checked');
+            element.checked = false;
 
             var classNames = options ? options.classNames : $.data(element, NAMESPACE).options.classNames;
             $element.parent().removeClass(classNames.checked);
@@ -46,6 +45,7 @@
     function click($element, options, useDefaultBehavior) {
         var element = $element[0];
         var func;
+
         if (element.type === 'radio') {
             func = check;
         }
@@ -103,16 +103,16 @@
                 classNames.disabled = options.classNames.disabled;
 
                 $element.addClass([options.classNames.hide, DELEGATE_CLASS].join(' '))
-                    .wrap('<div class="' +
-                        classNames.input + ' ' +
-                        DELEGATE_CLASS + (isDisabled ? ' ' + classNames.disabled : '') + '">');
+                    .wrap('<div class="' + [classNames.input, DELEGATE_CLASS, (isDisabled ? classNames.disabled : '')].join(' ') + '">');
                 var $parent = $element.parent();
 
                 if (element.checked) {
                     $parent.addClass(options.classNames.checked);
                 }
 
-                $('label[for=' + element.id + ']').addClass([options.classNames.label, DELEGATE_CLASS, classNames.labelType, (isDisabled ? classNames.disabled : '')].join(' '));
+                $label = $('label[for=' + element.id + ']');
+                $label.addClass([options.classNames.label, DELEGATE_CLASS, classNames.labelType, (isDisabled ? classNames.disabled : '')].join(' '));
+                this._label = $label;
             }
             else {
                 //jQuery UI's Widgets does not offer developers the flexibility to pass in an arbitrary set of elements.
@@ -131,7 +131,7 @@
         },
 
         isChecked: function () {
-            return !!this.element[0].checked;
+            return this.element[0].checked;
         },
 
         check: function () {
@@ -156,14 +156,28 @@
             this.element.parent().addClass(this.options.classNames.disabled);
         },
 
+        refresh: function () {
+            if (this.element[0].checked) {
+                check(this.element, this.options);
+            }
+            else {
+                uncheck(this.element, this.options);
+            }
+        },
+
         destroy: function () {
             $.Widget.prototype.destroy.apply(this, arguments); // default destroy
             // now do other stuff particular to this widget
             var classNames = this.options.classNames;
             var $element = this.element;
+            var $label = this._label;
+
             $element.unwrap();
             $element.removeClass([classNames.hide, DELEGATE_CLASS].join(' '));
-            $('label[for=' + $element[0].id + ']').removeClass([DELEGATE_CLASS, classNames.label, classNames.labelCheckbox, classNames.labelRadio, classNames.disabled].join(' '));
+
+            if($label) {
+                $label.removeClass([DELEGATE_CLASS, classNames.label, classNames.labelCheckbox, classNames.labelRadio, classNames.disabled].join(' '));
+            }
         }
     });
 
