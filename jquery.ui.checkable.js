@@ -110,9 +110,13 @@
                     $parent.addClass(options.classNames.checked);
                 }
 
-                $label = $('label[for=' + element.id + ']');
-                $label.addClass([options.classNames.label, DELEGATE_CLASS, classNames.labelType, (isDisabled ? classNames.disabled : '')].join(' '));
-                this._label = $label;
+                var inputId = element.id;
+                
+                if (inputId) {
+                    var $label = $('label[for=' + inputId + ']');
+                    $label.addClass([options.classNames.label, DELEGATE_CLASS, classNames.labelType, (isDisabled ? classNames.disabled : '')].join(' '));
+                    this._label = $label;
+                }
             }
             else {
                 //jQuery UI's Widgets does not offer developers the flexibility to pass in an arbitrary set of elements.
