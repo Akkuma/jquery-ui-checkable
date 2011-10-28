@@ -1,5 +1,5 @@
 /*
-* jQuery UI Checkable v1.1.0
+* jQuery UI Checkable v1.2.0
 * Copyright (c) 2011, Gregory Waxman. All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -15,12 +15,13 @@
     var NAMESPACE = 'checkable';
     var DELEGATE_CLASS = NAMESPACE + '-del';
 
-    function check($element, options, useDefaultBehavior) {
-        var element = $element[0];
+    function check(useDefaultBehavior) {
+        var element = this.element[0];
 
         if ((useDefaultBehavior && !element.disabled) || !useDefaultBehavior) {
-            var classNames = options ? options.classNames : $.data(element, NAMESPACE).options.classNames;
-            var $parent = $element.parent();
+            var classNames = this.options.classNames
+            ,   $parent = this.parent
+            ,   $label = this._label;
 
             if (element.type === 'radio') {
                 $('input[name="' + element.name + '"]').parent().removeClass(classNames.checked);               
@@ -28,22 +29,52 @@
 
             element.checked = true;
             $parent.addClass(classNames.checked);
+
+            $label && $label.addClass(classNames.checked);
         }
     }
 
-    function uncheck($element, options, useDefaultBehavior) {
-        var element = $element[0];
+    function uncheck(useDefaultBehavior) {
+        var element = this.element[0];
 
         if ((useDefaultBehavior && !element.disabled) || !useDefaultBehavior) {
+            var classNames = this.options.classNames
+            ,   $parent = this.parent
+            ,   $label = this._label;
+                        
             element.checked = false;
+            $parent.removeClass(classNames.checked);
 
-            var classNames = options ? options.classNames : $.data(element, NAMESPACE).options.classNames;
-            $element.parent().removeClass(classNames.checked);
+            $label && $label.removeClass(classNames.checked);
         }
     }
 
-    function click($element, options, useDefaultBehavior) {
-        var element = $element[0];
+    function disable($element, options) {
+        var element = this.element[0]
+        ,   $parent = this.parent
+        ,   $label  = this._label
+        ,   classNames = this.options.classNames;
+
+        element.disabled = true;
+        $parent.addClass(classNames.disabled);
+        
+        $label && $label.addClass(classNames.disabled);
+    }
+
+    function enable() {
+        var element = this.element[0]
+        ,   $parent = this.parent
+        ,   $label  = this._label
+        ,   classNames = this.options.classNames;
+
+        element.disabled = false;        
+        $parent.removeClass(classNames.disabled);
+
+        $label && $label.removeClass(classNames.disabled);
+    }
+
+    function click(useDefaultBehavior) {
+        var element = this.element[0];
         var func;
 
         if (element.type === 'radio') {
@@ -58,7 +89,7 @@
             }
         }
 
-        func($element, options, useDefaultBehavior);
+        func.call(this, useDefaultBehavior);
     }
 
     $.widget("ui.checkable", {
@@ -103,15 +134,11 @@
                 classNames.disabled = options.classNames.disabled;
 
                 $element.addClass([options.classNames.hide, DELEGATE_CLASS].join(' '))
-                    .wrap('<div class="' + [classNames.input, DELEGATE_CLASS, (isDisabled ? classNames.disabled : '')].join(' ') + '">');
-                var $parent = $element.parent();
+                    .wrap('<div class="' + [classNames.input, DELEGATE_CLASS, (isDisabled ? classNames.disabled : ''), (element.checked ? options.classNames.checked : '')].join(' ') + '">');
 
-                if (element.checked) {
-                    $parent.addClass(options.classNames.checked);
-                }
+                this.parent = $element.parent();
 
-                var inputId = element.id;
-                
+                var inputId = element.id;                
                 if (inputId) {
                     var $label = $('label[for=' + inputId + ']');
                     $label.addClass([options.classNames.label, DELEGATE_CLASS, classNames.labelType, (isDisabled ? classNames.disabled : '')].join(' '));
@@ -125,13 +152,60 @@
             }
         },
 
-        _setOptions: function (options) {
-            if ($.isPlainObject(options)) {
-                $.extend(true, this.options, options);
+        _setOption: function (key, value) {
+            if (key === "classNames") {
+                value = $.extend({}, this.options.classNames, value);
+                this._setClassNames(value);
+            }
+        },
+
+        _setClassNames: function (value) {
+            var $element = this.element
+            ,   element = $element[0]
+            ,   $parent = this.parent
+            ,   originalTypeClassNames
+            ,   type = element.type
+            ,   classNames = this.options.classNames
+            ,   isDisabled = !!element.disabled
+            ,   newClassNames = value
+            ,   newTypeClassNames = {};
+
+            if (type === 'checkbox') {
+                originalTypeClassNames = {
+                    input: classNames.checkbox,
+                    labelType: classNames.labelCheckbox
+                };
+                
+                newTypeClassNames = {
+                    input: newClassNames.checkbox,
+                    labelType: newClassNames.labelCheckbox
+                };
             }
             else {
-                this._super('_setOptions', options)
+                originalTypeClassNames = {
+                    input: classNames.radio,
+                    labelType: classNames.labelRadio
+                };
+                
+                newTypeClassNames = {
+                    input: newClassNames.radio,
+                    labelType: newClassNames.labelRadio
+                };
             }
+
+            if (classNames.hide !== newClassNames.hide) {
+                $element.removeClass(classNames.hide).addClass(newClassNames.hide);
+            }
+
+            $parent.removeClass([originalTypeClassNames.input, (isDisabled ? classNames.disabled : ''), (element.checked ? classNames.checked : '')].join(' '))
+                .addClass([newTypeClassNames.input, (isDisabled ? newClassNames.disabled : ''), (element.checked ? newClassNames.checked : '')].join(' '));
+                
+            if (this._label) {
+                this._label.removeClass([classNames.label, originalTypeClassNames.labelType, (isDisabled ? classNames.disabled : '')].join(' '))
+                    .addClass([newClassNames.label, newTypeClassNames.labelType, (isDisabled ? newTypeClassNames.disabled : '')].join(' '));
+            }
+
+            this.options.classNames = newClassNames;
         },
 
         isChecked: function () {
@@ -139,42 +213,51 @@
         },
 
         check: function () {
-            check(this.element, this.options);
+            check.call(this);
         },
 
         uncheck: function () {
-            uncheck(this.element, this.options);
+            uncheck.call(this);
         },
 
         click: function (useDefaultBehavior) {
-            click(this.element, this.options, useDefaultBehavior);
+            click.call(this, useDefaultBehavior);
         },
 
         enable: function () {
-            this.element.removeAttr('disabled');
-            this.element.parent().removeClass(this.options.classNames.disabled);
+            enable.call(this);
         },
 
         disable: function () {
-            this.element[0].disabled = 'disabled';
-            this.element.parent().addClass(this.options.classNames.disabled);
+            disable.call(this);
         },
 
         refresh: function () {
-            if (this.element[0].checked) {
-                check(this.element, this.options);
-            }
-            else {
-                uncheck(this.element, this.options);
+            var type = this.element[0].type;
+
+            if (type === 'radio' || type === 'checkbox') {
+                if (this.element[0].checked) {
+                    check.call(this);
+                } 
+                else {
+                    uncheck.call(this);
+                }
+
+                if(this.element[0].disabled) {
+                    disable.call(this);
+                } 
+                else {
+                    enable.call(this);
+                }
             }
         },
 
         destroy: function () {
             $.Widget.prototype.destroy.apply(this, arguments); // default destroy
             // now do other stuff particular to this widget
-            var classNames = this.options.classNames;
-            var $element = this.element;
-            var $label = this._label;
+            var classNames = this.options.classNames
+            , $element = this.element
+            , $label = this._label;
 
             $element.unwrap();
             $element.removeClass([classNames.hide, DELEGATE_CLASS].join(' '));
@@ -188,7 +271,7 @@
     $(function () {
         $(document.body).delegate('input.' + DELEGATE_CLASS, 'click', function ($e) {
             var $this = $(this);
-            var options = $.data(this, NAMESPACE).options;
+            var $data = $.data(this, NAMESPACE);
             var func;
 
             if (this.checked) {
@@ -198,7 +281,7 @@
                 func = uncheck;
             }
 
-            func($this, options, true);
+            func.call($data, true);
         }).delegate('div.' + DELEGATE_CLASS, 'hover', function () {
             var $this = $(this);
 
